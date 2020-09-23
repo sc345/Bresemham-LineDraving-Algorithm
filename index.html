@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src='http://www.javascriptteacher.com/js/ui.js' type='text/javascript'></script>
+    <script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+    <script src='http://www.javascriptteacher.com/js/hms.js'></script>
+    <title>Live Bresenham's Line Drawing Demo in JS</title>
+</head>
+
+<body>
+
+    <h1>Drawing Lines In HTML Without Canvas</h1>
+
+    <p>Actual line drawing demo (move mouse over fake raster display to see in action!)</p>
+
+    <style>
+        #bresenham-board {
+            width: 600px;
+            height: 270px;
+            margin: 0 auto;
+            display: block;
+            position: relative;
+        }
+
+        #bresenham-board-container {
+            width: 100%;
+            display: block;
+            position: relative;
+        }
+    </style>
+
+    <div id="mmm"></div>
+
+    <div id="bresenham-board" style=""></div>
+
+
+    <script>
+        let mouse = {
+            x: 0,
+            y: 0
+        };
+
+        let pointer = {
+            x: 0,
+            y: 0
+        };
+
+        let pixels = [];
+
+        var boardWidth = 70;
+        var boardHeight = 30;
+        var cellWidth = 15;
+        var cellHeight = 15;
+
+        function erase_board(width, height) {
+            let index = 0;
+            for (let h = 0; h < height; h++)
+                for (let w = 0; w < width; w++, index++) {
+                    pixels[index] = 0;
+                    document.getElementById("pixel-" + w + "-" + h).style.backgroundColor = "red";
+                }
+        }
+
+        function pixel(x, y) {
+            pixels[x + (boardWidth * y)] = 1
+        };
+
+        function render_pixels(width, height) {
+            let index = 0;
+            for (let h = 0; h < height; h++)
+                for (let w = 0; w < width; w++, index++)
+                    if (pixels[index] == 1) {
+                        //console.log(w + ", " + h);
+                        let tag = "pixel-" + w + "-" + h;
+                        let id = document.getElementById(tag);
+                        if (id != null && id != undefined)
+                            //if (!document.getElementById("pixel-" + w + "-" + h).style.backgroundColor)
+                            document.getElementById("pixel-" + w + "-" + h).style.backgroundColor = "black"; //"#"+((1<<24)*Math.random()|0).toString(16);//"black";
+                    }
+        }
+
+        let draw_line = (x0, y0, x1, y1) => {
+
+            // Calculate "deltas" of the line (difference between two ending points)
+            let dx = x1 - x0;
+            let dy = y1 - y0;
+
+            // Calculate the line equation based on deltas
+            let D = (2 * dy) - dx;
+
+            let y = y0;
+
+            // Draw the line based on arguments provided
+            for (let x = x0; x < x1; x++) {
+
+                pixel(x, y);
+
+                if (D >= 0) {
+                    y = y + 1;
+                    D = D - 2 * dx;
+                }
+                D = D + 2 * dy;
+            }
+        };
+
+        let draw_line_2 = (x1, y1, x2, y2) => {
+            let x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
+            dx = x2 - x1;
+            dy = y2 - y1;
+            dx1 = Math.abs(dx);
+            dy1 = Math.abs(dy);
+            px = 2 * dy1 - dx1;
+            py = 2 * dx1 - dy1;
+            if (dy1 <= dx1) {
+
+                // x is left to right             // x is right to left, so start from the "end" of line
+                if (dx >= 0) {
+                    x = x1;
+                    y = y1;
+                    xe = x2;
+                } else {
+                    x = x2;
+                    y = y2;
+                    xe = x1;
+                }
+
+                pixel(x, y);
+
+                for (i = 0; x < xe; i++) {
+                    x = x + 1;
+                    if (px < 0) {
+                        px = px + 2 * dy1;
+                    } else {
+                        if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) {
+                            y = y + 1;
+                        } else {
+                            y = y - 1;
+                        }
+                        px = px + 2 * (dy1 - dx1);
+                    }
+                    pixel(x, y);
+                }
+            } else {
+                if (dy >= 0) {
+                    x = x1;
+                    y = y1;
+                    ye = y2;
+                } else {
+                    x = x2;
+                    y = y2;
+                    ye = y1;
+                }
+                pixel(x, y);
+                for (i = 0; y < ye; i++) {
+                    y = y + 1;
+                    if (py <= 0) {
+                        py = py + 2 * dx1;
+                    } else {
+                        if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) {
+                            x = x + 1;
+                        } else {
+                            x = x - 1;
+                        }
+                        py = py + 2 * (dx1 - dy1);
+                    }
+                    pixel(x, y);
+                }
+            }
+        }
+
+        window.onload = function () {
+
+            document.addEventListener("mousemove", function (e) {
+                mouse.x = e.pageX;
+                mouse.y = e.pageY;
+                //console.log(E.pageY + "," + E.screenY);
+                // document.getElementById("mmm").innerHTML = mouse.x + " / " + mouse.y;
+            });
+
+            // Settings
+
+
+            // Render the board !
+
+            var target = document.getElementById("bresenham-board");
+
+            // Create the drawing board
+            for (var y = 0; y < boardHeight; y++) {
+                for (var x = 0; x < boardWidth; x++) {
+                    var e = document.createElement("div");
+                    e.setAttribute("id", "pixel-" + x + "-" + y);
+                    e.style.position = "absolute";
+                    e.style.display = "block";
+                    e.style.left = (x * cellWidth) + "px";
+                    e.style.top = (y * cellHeight) + "px";
+                    e.style.width = cellWidth + "px";
+                    e.style.height = cellHeight + "px";
+                    e.style.border = "1px solid #ccc";
+                    // Add this cell to the bresenham board container
+                    target.append(e);
+                }
+            }
+
+            // Track mouse position on the grid
+            target.addEventListener("mousemove", function (e) {
+
+                pointer.x = mouse.x - $(target).offset().left;
+                pointer.y = mouse.y - $(target).offset().top;
+
+                pointer.x = parseInt(pointer.x / cellWidth);
+                pointer.y = parseInt(pointer.y / cellHeight);
+
+                if (pointer.x < 0)
+                    pointer.x = 0;
+
+                if (pointer.y < 0)
+                    pointer.y = 0;
+
+                //mouse.x = (e.pageX - this.offsetLeft - 30) / 10;
+                //mouse.y = (e.pageY - this.offsetTop - 105) / 10;
+                //console.log(E.pageY + "," + E.screenY);
+                document.getElementById("mmm").innerHTML = "[" + mouse.x + "," + mouse.y + "]" + pointer.x +
+                    " / " + pointer.y;
+
+                //pos_left = e.pageX - e.currentTarget.offsetLeft;
+                //pos_top = e.pageY - e.currentTarget.offsetTop;
+                //console.log(pos_left, pos_top);
+
+
+            });
+
+            setInterval(function () {
+                erase_board(boardWidth, boardHeight);
+                draw_line_2(boardWidth / 2, boardHeight / 2, pointer.x, pointer.y);
+                //pixel();
+                render_pixels(boardWidth, boardHeight);
+            }, 0);
+
+
+        };
+
+        function iterate() {
+            let iterator = 2;
+            setInterval(function () {
+                document.getElementsByClassName("it" + iterator)[0].className = "bg";
+                iterator++;
+            }, 1200);
+        }
+    </script>
+
+</body>
+
+</html>
